@@ -1,3 +1,7 @@
+## PhonoPlay
+
+PhonoPlay is a teacher-focused activity builder for creating interactive phoneme-based classroom activities. Create, preview and export activities that can run directly in a web browser.
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
