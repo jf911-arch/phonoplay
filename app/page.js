@@ -1,69 +1,124 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+import ActivityCard from "./components/ActivityCard";
 
 export default function Home() {
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
+    <>
+      <section className="hero-section">
+        <div className="hero-content">
+          <div className="hero-badge">
+            Speech Pathology Classroom Tool
+          </div>
+
           <h1>
-            To get started, edit the{" "}
-            <code className={styles.code}>page.js</code> file.
+            Build engaging
+            <span> phoneme activities.</span>
           </h1>
+
           <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
+            PhonoPlay is a teacher-focused activity builder for
+            creating interactive phoneme-based classroom activities.
+            Create, preview and export activities that can run
+            directly in a web browser.
+          </p>
+
+          <div className="hero-actions">
+            <a href="/wordle" className="primary-button">
+              Create a Wordle
+              <span>→</span>
+            </a>
+
+            <a href="/word-search" className="secondary-button">
+              Create a Word Search
+            </a>
+          </div>
+        </div>
+
+        <div className="hero-visual">
+          <div className="phoneme-display">
+            <div className="phoneme-label">Today's phonemes</div>
+
+            <div className="phoneme-row">
+              <span>/θ/</span>
+              <span>/ɪ/</span>
+              <span>/n/</span>
+            </div>
+
+            <div className="phoneme-hint">
+              TH — as in <strong>thin</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="activities-section">
+        <div className="section-heading">
+          <div>
+            <span className="section-label">ACTIVITIES</span>
+            <h2>Choose an activity</h2>
+          </div>
+
+          <p>
+            Select a classroom activity to configure and preview
+            your phoneme-based content.
           </p>
         </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        <div className="activity-grid">
+          <ActivityCard
+            icon="🔤"
+            title="Phoneme Wordle"
+            description="Create a Wordle-style guessing activity using phonemes instead of conventional spelling."
+            href="/wordle"
+          />
+
+          <ActivityCard
+            icon="🔎"
+            title="Phoneme Word Search"
+            description="Create a word search using a fixed set of phoneme-based words for classroom practice."
+            href="/word-search"
+          />
         </div>
-      </main>
-    </div>
+      </section>
+
+      <section className="workflow-section">
+        <div className="section-heading centered">
+          <span className="section-label">HOW IT WORKS</span>
+          <h2>Build. Preview. Generate.</h2>
+          <p>
+            PhonoPlay provides a simple workflow for teachers to
+            prepare classroom-ready activities.
+          </p>
+        </div>
+
+        <div className="workflow-grid">
+          <div className="workflow-step">
+            <div className="step-number">01</div>
+            <h3>Configure</h3>
+            <p>
+              Choose your activity and customise the available
+              phoneme-based settings.
+            </p>
+          </div>
+
+          <div className="workflow-step">
+            <div className="step-number">02</div>
+            <h3>Preview</h3>
+            <p>
+              See how the finished classroom activity will look
+              before generating it.
+            </p>
+          </div>
+
+          <div className="workflow-step">
+            <div className="step-number">03</div>
+            <h3>Generate</h3>
+            <p>
+              Download a standalone HTML file that can be opened
+              in a normal web browser.
+            </p>
+          </div>
+        </div>
+      </section>
+    </>
   );
 }
