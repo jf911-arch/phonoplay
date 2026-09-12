@@ -2,7 +2,7 @@ export default function Footer() {
   return (
     <footer className="site-footer">
       <div className="footer-inner">
-<p> Assessment 1 - Frontend Design and Usability </p>
+<p> Assessment 2 - Backend implementation and database integration </p>
 
         <div className="footer-student">
           <span>Joshua Furr</span>

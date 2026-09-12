@@ -60,10 +60,10 @@ const DIRECTIONS = [
   { row: -1, col: 1 },
 ];
 
-function createEmptyGrid() {
+function createEmptyGrid(size) {
   return Array.from(
-    { length: GRID_SIZE },
-    () => Array.from({ length: GRID_SIZE }, () => "")
+    { length: size },
+    () => Array.from({ length: size }, () => "")
   );
 }
 
@@ -74,9 +74,9 @@ function canPlaceWord(grid, word, row, col, direction) {
 
     if (
       currentRow < 0 ||
-      currentRow >= GRID_SIZE ||
+      currentRow >= grid.length ||
       currentCol < 0 ||
-      currentCol >= GRID_SIZE
+      currentCol >= grid.length
     ) {
       return false;
     }
@@ -100,8 +100,8 @@ function placeWord(grid, word, row, col, direction) {
   });
 }
 
-function generatePuzzle(words) {
-  const grid = createEmptyGrid();
+function generatePuzzle(words, size) {
+  const grid = createEmptyGrid(size);
   const placements = [];
 
   words.forEach((word) => {
@@ -113,8 +113,8 @@ function generatePuzzle(words) {
           Math.floor(Math.random() * DIRECTIONS.length)
         ];
 
-      const row = Math.floor(Math.random() * GRID_SIZE);
-      const col = Math.floor(Math.random() * GRID_SIZE);
+      const row = Math.floor(Math.random() * size);
+      const col = Math.floor(Math.random() * size);
 
       if (
         canPlaceWord(
@@ -173,8 +173,8 @@ function generatePuzzle(words) {
     "/iː/",
   ];
 
-  for (let row = 0; row < GRID_SIZE; row++) {
-    for (let col = 0; col < GRID_SIZE; col++) {
+  for (let row = 0; row < size; row++) {
+    for (let col = 0; col < size; col++) {
       if (grid[row][col] === "") {
         grid[row][col] =
           fillerPhonemes[
@@ -206,16 +206,297 @@ export default function WordSearchPage() {
     useState([]);
 
   const [puzzle, setPuzzle] =
-    useState(() => generatePuzzle(WORDS));
+  useState(() => generatePuzzle(WORDS, GRID_SIZE));
 
   const [message, setMessage] = useState("");
 
+  const [activityTitle, setActivityTitle] = useState(
+  "My Word Search Activity"
+  );
+
+  const [maxGuesses, setMaxGuesses] = useState(6);
+
+  const [gridSize, setGridSize] = useState(GRID_SIZE);
+
+  const [outputFilename, setOutputFilename] = useState(
+    "phonoplay-word-search.html"
+  );
+
+  const [savedActivityId, setSavedActivityId] = useState(null);
+
+  const [saveMessage, setSaveMessage] = useState("");
+
+  const [saving, setSaving] = useState(false);
+
+  const [activityIdToLoad, setActivityIdToLoad] = useState("");
+
+  const [loadingActivity, setLoadingActivity] = useState(false);
+
+  const [activityWords, setActivityWords] = useState(WORDS);
+
   const regeneratePuzzle = () => {
-    setPuzzle(generatePuzzle(WORDS));
+    setPuzzle(generatePuzzle(activityWords, gridSize));
     setFoundWords([]);
     setSelectedCells([]);
     setMessage("");
   };
+
+  async function saveActivity() {
+  setSaving(true);
+  setSaveMessage("");
+
+  try {
+    const response = await fetch("/api/activities", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        title: activityTitle,
+        type: "WORD_SEARCH",
+        difficulty,
+        hintsEnabled,
+        gridSize: gridSize,
+        maxGuesses,
+        outputFilename,
+        words: activityWords.map((word) => ({
+          english: word.english,
+          phonemes: word.phonemes.join(" "),
+        })),
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.message || "Failed to save activity."
+      );
+    }
+
+    setSavedActivityId(data.activity.id);
+    setActivityIdToLoad(String(data.activity.id));
+    setSaveMessage(
+      `Activity saved successfully! Activity ID: ${data.activity.id}`
+    );
+  } catch (error) {
+    console.error(
+      "Failed to save activity:",
+      error
+    );
+
+    setSaveMessage(
+      error.message ||
+        "Failed to save activity."
+    );
+  } finally {
+    setSaving(false);
+  }
+}
+
+async function loadActivity() {
+  if (!activityIdToLoad) {
+    setSaveMessage(
+      "Please enter an activity ID."
+    );
+    return;
+  }
+
+  setLoadingActivity(true);
+  setSaveMessage("");
+
+  try {
+    const response = await fetch(
+      `/api/activities/${activityIdToLoad}`
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.message ||
+          "Failed to load activity."
+      );
+    }
+
+    const activity = data.activity;
+
+    setSavedActivityId(activity.id);
+    setActivityTitle(activity.title);
+    setDifficulty(activity.difficulty);
+    setHintsEnabled(activity.hintsEnabled);
+
+    setMaxGuesses(activity.maxGuesses);
+
+    setOutputFilename(
+      activity.outputFilename ||
+        "phonoplay-word-search.html"
+    );
+
+    setGridSize(activity.gridSize);
+
+    if (
+      activity.words &&
+      activity.words.length > 0
+    ) {
+      const loadedWords =
+        activity.words.map((word) => ({
+          english: word.english,
+          phonemes: word.phonemes
+            .trim()
+            .split(/\s+/),
+        }));
+
+      setActivityWords(loadedWords);
+
+      setPuzzle(
+        generatePuzzle(loadedWords, activity.gridSize)
+      );
+    }
+
+    setFoundWords([]);
+    setSelectedCells([]);
+    setMessage("");
+
+    setSaveMessage(
+      "Activity loaded successfully!"
+    );
+  } catch (error) {
+    console.error(
+      "Failed to load activity:",
+      error
+    );
+
+    setSaveMessage(
+      error.message ||
+        "Failed to load activity."
+    );
+  } finally {
+    setLoadingActivity(false);
+  }
+}
+
+async function updateActivity() {
+  if (!savedActivityId) {
+    setSaveMessage(
+      "Please load or save an activity before updating it."
+    );
+    return;
+  }
+
+  setSaving(true);
+  setSaveMessage("");
+
+  try {
+    const response = await fetch(
+      `/api/activities/${savedActivityId}`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: activityTitle,
+          type: "WORD_SEARCH",
+          difficulty,
+          hintsEnabled,
+          gridSize: gridSize,
+          maxGuesses,
+          outputFilename,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.message ||
+          "Failed to update activity."
+      );
+    }
+
+    setSaveMessage(
+      "Activity updated successfully!"
+    );
+  } catch (error) {
+    console.error(
+      "Failed to update activity:",
+      error
+    );
+
+    setSaveMessage(
+      error.message ||
+        "Failed to update activity."
+    );
+  } finally {
+    setSaving(false);
+  }
+}
+
+async function deleteActivity() {
+  if (!savedActivityId) {
+    setSaveMessage(
+      "Please load an activity before deleting it."
+    );
+    return;
+  }
+
+  const confirmed = window.confirm(
+    "Are you sure you want to delete this activity?"
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  setSaving(true);
+  setSaveMessage("");
+
+  try {
+    const response = await fetch(
+      `/api/activities/${savedActivityId}`,
+      {
+        method: "DELETE",
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.message ||
+          "Failed to delete activity."
+      );
+    }
+
+    setSavedActivityId(null);
+    setActivityIdToLoad("");
+    setActivityWords(WORDS);
+
+    setPuzzle(generatePuzzle(WORDS, GRID_SIZE));
+
+    setFoundWords([]);
+    setSelectedCells([]);
+    setMessage("");
+
+    setSaveMessage(
+      "Activity deleted successfully!"
+    );
+  } catch (error) {
+    console.error(
+      "Failed to delete activity:",
+      error
+    );
+
+    setSaveMessage(
+      error.message ||
+        "Failed to delete activity."
+    );
+  } finally {
+    setSaving(false);
+  }
+}
 
   const phonemePositions = useMemo(() => {
     const positions = {};
@@ -345,14 +626,64 @@ export default function WordSearchPage() {
   }
 
   function generateHTML() {
+    const themeCookie =
+      document.cookie
+        .split("; ")
+        .find((row) =>
+          row.startsWith("phonoplay-theme=")
+        )
+        ?.split("=")[1];
+
+    const selectedTheme =
+      themeCookie === "dark" ||
+      themeCookie === "system"
+        ? themeCookie
+        : "light";
+
+  // Generate a fresh puzzle using the same word-placement
+  // logic as the live preview. 
+    const generatedPuzzle =
+      generatePuzzle(activityWords, gridSize);
+
+    const generatedPositions = {};
+
+    generatedPuzzle.placements.forEach(
+      (placement) => {
+        const cells = [];
+
+        placement.word.phonemes.forEach(
+          (_, index) => {
+            cells.push({
+              row:
+                placement.row +
+                placement.direction.row * index,
+
+              col:
+                placement.col +
+                placement.direction.col * index,
+            });
+          }
+        );
+
+        generatedPositions[
+          placement.word.english
+        ] = cells;
+      }
+    );
+
     const gridData =
-      JSON.stringify(puzzle.grid);
+      JSON.stringify(generatedPuzzle.grid);
+
+    const gridSizeData =
+      JSON.stringify(
+        generatedPuzzle.grid[0]?.length || 10
+      );
 
     const wordsData =
-      JSON.stringify(WORDS);
+      JSON.stringify(activityWords);
 
     const positionsData =
-      JSON.stringify(phonemePositions);
+      JSON.stringify(generatedPositions);
 
     const hintsData =
       JSON.stringify(hintsEnabled);
@@ -464,7 +795,7 @@ export default function WordSearchPage() {
       display: grid;
 
       grid-template-columns:
-        repeat(10, minmax(0, 1fr));
+        repeat(${gridSizeData}, minmax(0, 1fr));
 
       border: 1px solid #dfe3eb;
 
@@ -747,6 +1078,268 @@ export default function WordSearchPage() {
         flex-direction: column;
       }
     }
+
+      /* Generated dark theme */
+    ${selectedTheme === "dark" ? `
+    body {
+      background: #111827;
+      color: #f3f4f6;
+    }
+
+    .header h1 {
+      color: #f9fafb;
+    }
+
+    .header p {
+      color: #9ca3af;
+    }
+
+    .game-panel {
+      background: #1f2937;
+      color: #f3f4f6;
+      border-color: #374151;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+    }
+
+    .difficulty {
+      color: #9ca3af;
+    }
+
+    .progress {
+      color: #a5b4fc;
+    }
+
+    .grid {
+      border-color: #4b5563;
+    }
+
+    .cell {
+      background: #374151;
+      color: #f9fafb;
+      border-color: #4b5563;
+    }
+
+    .cell:hover {
+      background: #312e81;
+      color: #a5b4fc;
+    }
+
+    .cell.selected {
+      background: #4f46e5;
+      color: white;
+    }
+
+    .cell.found {
+      background: #166534;
+      color: #dcfce7;
+    }
+
+    .message {
+      color: #d1d5db;
+    }
+
+    .hint-box {
+      background: #111827;
+      border-color: #374151;
+    }
+
+    .hint-title {
+      color: #f9fafb;
+    }
+
+    .hint-item {
+      background: #374151;
+      border-color: #4b5563;
+      color: #f3f4f6;
+    }
+
+    .hint-item strong {
+      color: #a5b4fc;
+    }
+
+    .clear {
+      background: #374151;
+      color: #f9fafb;
+    }
+
+    .clear:hover {
+      background: #4b5563;
+    }
+
+    .check {
+      background: #635bff;
+      color: white;
+    }
+
+    .new-puzzle {
+      background: #111827;
+      color: white;
+    }
+
+    .word-list h2 {
+      color: #f9fafb;
+    }
+
+    .word {
+      background: #374151;
+      border-color: #4b5563;
+      color: #f3f4f6;
+    }
+
+    .english {
+      color: #9ca3af;
+    }
+
+    .word-status {
+      color: #9ca3af;
+    }
+
+    .word.found {
+      background: #14532d;
+      border-color: #22c55e;
+    }
+
+    .word.found .word-status {
+      color: #86efac;
+    }
+
+    .complete {
+      background: #064e3b;
+      color: #d1fae5;
+    }
+    ` : ""}
+
+    /* Generated system theme */
+    ${selectedTheme === "system" ? `
+    @media (prefers-color-scheme: dark) {
+      body {
+        background: #111827;
+        color: #f3f4f6;
+      }
+
+      .header h1 {
+        color: #f9fafb;
+      }
+
+      .header p {
+        color: #9ca3af;
+      }
+
+      .game-panel {
+        background: #1f2937;
+        color: #f3f4f6;
+        border-color: #374151;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+      }
+
+      .difficulty {
+        color: #9ca3af;
+      }
+
+      .progress {
+        color: #a5b4fc;
+      }
+
+      .grid {
+        border-color: #4b5563;
+      }
+
+      .cell {
+        background: #374151;
+        color: #f9fafb;
+        border-color: #4b5563;
+      }
+
+      .cell:hover {
+        background: #312e81;
+        color: #a5b4fc;
+      }
+
+      .cell.selected {
+        background: #4f46e5;
+        color: white;
+      }
+
+      .cell.found {
+        background: #166534;
+        color: #dcfce7;
+      }
+
+      .message {
+        color: #d1d5db;
+      }
+
+      .hint-box {
+        background: #111827;
+        border-color: #374151;
+      }
+
+      .hint-title {
+        color: #f9fafb;
+      }
+
+      .hint-item {
+        background: #374151;
+        border-color: #4b5563;
+        color: #f3f4f6;
+      }
+
+      .hint-item strong {
+        color: #a5b4fc;
+      }
+
+      .clear {
+        background: #374151;
+        color: #f9fafb;
+      }
+
+      .clear:hover {
+        background: #4b5563;
+      }
+
+      .check {
+        background: #635bff;
+        color: white;
+      }
+
+      .new-puzzle {
+        background: #111827;
+        color: white;
+      }
+
+      .word-list h2 {
+        color: #f9fafb;
+      }
+
+      .word {
+        background: #374151;
+        border-color: #4b5563;
+        color: #f3f4f6;
+      }
+
+      .english {
+        color: #9ca3af;
+      }
+
+      .word-status {
+        color: #9ca3af;
+      }
+
+      .word.found {
+        background: #14532d;
+        border-color: #22c55e;
+      }
+
+      .word.found .word-status {
+        color: #86efac;
+      }
+
+      .complete {
+        background: #064e3b;
+        color: #d1fae5;
+      }
+    }
+    ` : ""}
   </style>
 </head>
 
@@ -780,7 +1373,7 @@ export default function WordSearchPage() {
           class="progress"
           id="progress"
         >
-          0 / ${WORDS.length} found
+          0 / ${activityWords.length} found
         </span>
 
       </div>
@@ -1322,7 +1915,7 @@ export default function WordSearchPage() {
     link.href = url;
 
     link.download =
-      "phonoplay-word-search.html";
+      outputFilename;
 
     document.body.appendChild(link);
 
@@ -1385,7 +1978,7 @@ export default function WordSearchPage() {
 
             <div className="word-list">
 
-              {WORDS.map((word) => (
+              {activityWords.map((word) => (
 
                 <div
                   className="word-list-item"
@@ -1405,11 +1998,6 @@ export default function WordSearchPage() {
               ))}
 
             </div>
-
-            <span className="form-help">
-              Assessment 1 uses a fixed
-              five-word phoneme list.
-            </span>
 
           </div>
 
@@ -1486,6 +2074,102 @@ export default function WordSearchPage() {
 
           </div>
 
+          <div className="form-group">
+
+            <label htmlFor="grid-size">
+              Grid size
+            </label>
+
+            <input
+              id="grid-size"
+              type="number"
+              min="5"
+              max="20"
+              value={gridSize}
+              onChange={(event) => {
+                const newSize = Number(event.target.value);
+
+                if (newSize >= 5 && newSize <= 20) {
+                  setGridSize(newSize);
+                }
+              }}
+            />
+
+            <span className="form-help">
+              Choose the size of the word search grid (5–20).
+            </span>
+
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="activity-id">
+              Activity ID
+            </label>
+
+            <input
+              id="activity-id"
+              type="number"
+              min="1"
+              value={activityIdToLoad}
+              onChange={(event) =>
+                setActivityIdToLoad(event.target.value)
+              }
+              placeholder="Enter activity ID"
+            />
+
+            <button
+              className="generate-button"
+              type="button"
+              onClick={loadActivity}
+              disabled={loadingActivity}
+            >
+              {loadingActivity
+                ? "Loading..."
+                : "Load Activity"}
+            </button>
+
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="output-filename">
+              Output filename
+            </label>
+
+            <input
+              id="output-filename"
+              type="text"
+              value={outputFilename}
+              onChange={(event) =>
+                setOutputFilename(event.target.value)
+              }
+              placeholder="phonoplay-word-search.html"
+            />
+
+            <span className="form-help">
+              Choose the filename for the generated HTML file.
+            </span>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="activity-title">
+              Activity title
+            </label>
+
+            <input
+              id="activity-title"
+              type="text"
+              value={activityTitle}
+              onChange={(event) =>
+                setActivityTitle(event.target.value)
+              }
+              placeholder="My Word Search Activity"
+            />
+
+            <span className="form-help">
+              Give your activity a name.
+            </span>
+          </div>
+
           <div className="builder-actions">
 
             <button
@@ -1504,6 +2188,38 @@ export default function WordSearchPage() {
             >
               Generate New Puzzle
             </button>
+
+            <button
+              className="generate-button"
+              onClick={saveActivity}
+              disabled={saving}
+            >
+              {saving ? "Saving..." : "Save Activity"}
+            </button>
+
+            <button
+              className="generate-button"
+              onClick={updateActivity}
+              disabled={saving || !savedActivityId}
+            >
+              {saving ? "Updating..." : "Update Activity"}
+            </button>
+
+            <button
+              className="reset-button"
+              onClick={deleteActivity}
+              disabled={saving || !savedActivityId}
+            >
+              {saving ? "Deleting..." : "Delete Activity"}
+            </button>
+
+            {saveMessage && (
+              <p className="form-help">
+                {saveMessage}
+              </p>
+            )}
+
+            
 
           </div>
 
@@ -1527,7 +2243,7 @@ export default function WordSearchPage() {
 
             <span className="preview-status">
               {foundWords.length} /{" "}
-              {WORDS.length} found
+              {activityWords.length} found
             </span>
 
           </div>
@@ -1538,7 +2254,7 @@ export default function WordSearchPage() {
               className="search-grid"
               style={{
                 gridTemplateColumns:
-                  `repeat(${GRID_SIZE}, minmax(0, 1fr))`,
+                  `repeat(${puzzle.grid[0]?.length || 10}, minmax(0, 1fr))`,
               }}
             >
 
@@ -1700,7 +2416,7 @@ export default function WordSearchPage() {
 
             <div className="search-words">
 
-              {WORDS.map((word) => {
+              {activityWords.map((word) => {
 
                 const found =
                   foundWords.includes(
@@ -1749,7 +2465,7 @@ export default function WordSearchPage() {
             </div>
 
             {foundWords.length ===
-              WORDS.length && (
+              activityWords.length && (
 
               <div className="complete-message">
 
@@ -1758,7 +2474,7 @@ export default function WordSearchPage() {
                 </strong>
 
                 <span>
-                  You found all five
+                  You found all {activityWords.length} 
                   phoneme words.
                 </span>
 

@@ -10,6 +10,10 @@ const mainLinks = [
     href: "/",
   },
   {
+    name: "Words",
+    href: "/words",
+  },
+  {
     name: "Wordle",
     href: "/wordle",
   },
@@ -92,7 +96,7 @@ export default function Navbar() {
           </span>
               
         </Link>
-    <p> Assessment 1 - Frontend Design and Usability </p>
+    <p> Assessment 2 - Backend implementation and database integration </p>
 
         {/* DESKTOP NAVIGATION */}
 

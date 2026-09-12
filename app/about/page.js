@@ -67,7 +67,7 @@ export default function About() {
         </p>
 
         <p>
-          Assessment 1 — Frontend Design and Usability
+          Assessment 2 - Backend implementation and database integration
         </p>
       </section>
 
@@ -75,20 +75,17 @@ export default function About() {
         <span className="section-label">DEMONSTRATION</span>
 
         <h2>Project Demonstration</h2>
-
-        <div className="video-placeholder">
-          <div className="video-icon">▶</div>
-
-          <p>
-            Your assessment demonstration video will be
-            embedded here.
-          </p>
-
-          <span>
-            Replace this placeholder with your video before
-            submission.
-          </span>
-        </div>
+        
+          <iframe width="560" 
+                  height="315" 
+                  src="https://www.youtube.com/embed/bSLaBddGfYs?si=vcmphNgNaKYdNETG" 
+                  title="YouTube video player" 
+                  frameborder="0" 
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                  referrerpolicy="strict-origin-when-cross-origin" 
+                  allowfullscreen>  
+          </iframe>
+        
       </section>
     </div>
   );
