@@ -96,7 +96,7 @@ export default function Navbar() {
           </span>
               
         </Link>
-    <p> Assessment 2 - Backend implementation and database integration </p>
+    <p> Assessment 3 - Data-driven application and reporting </p>
 
         {/* DESKTOP NAVIGATION */}
 

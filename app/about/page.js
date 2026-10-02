@@ -50,9 +50,6 @@ export default function About() {
 
           <p>
             A word search activity based on phoneme sequences.
-            Assessment 1 uses a small fixed set of phoneme-based
-            words, with more advanced word management planned for
-            later assessments.
           </p>
         </section>
       </div>
@@ -67,7 +64,7 @@ export default function About() {
         </p>
 
         <p>
-          Assessment 2 - Backend implementation and database integration
+          Assessment 3 - Data-driven application and reporting
         </p>
       </section>
 
