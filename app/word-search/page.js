@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 const WORDS = [
   {
@@ -195,6 +195,53 @@ function generatePuzzle(words, size) {
 export default function WordSearchPage() {
   const [difficulty, setDifficulty] =
     useState("medium");
+  
+    const pageStartTime = useRef(Date.now());
+
+  useEffect(() => {
+    fetch("/api/usage-events", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        eventType: "ACTIVITY_VIEWED",
+        activityType: "WORD_SEARCH",
+        success: true,
+        details: "Word Search builder viewed",
+      }),
+    }).catch((error) => {
+      console.error(
+        "Failed to record activity view:",
+        error
+      );
+    });
+
+    return () => {
+      const durationMs =
+        Date.now() - pageStartTime.current;
+
+      fetch("/api/usage-events", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        keepalive: true,
+        body: JSON.stringify({
+          eventType: "TIME_ON_PAGE",
+          activityType: "WORD_SEARCH",
+          durationMs,
+          success: true,
+          details: "Time spent on Word Search builder",
+        }),
+      }).catch((error) => {
+        console.error(
+          "Failed to record time on page:",
+          error
+        );
+      });
+    };
+  }, []);
 
   const [hintsEnabled, setHintsEnabled] =
     useState(true);
@@ -206,7 +253,10 @@ export default function WordSearchPage() {
     useState([]);
 
   const [puzzle, setPuzzle] =
-  useState(() => generatePuzzle(WORDS, GRID_SIZE));
+  useState(() => ({
+    grid: createEmptyGrid(GRID_SIZE),
+    placements: [],
+  }));
 
   const [message, setMessage] = useState("");
 
@@ -625,7 +675,7 @@ async function deleteActivity() {
     );
   }
 
-  function generateHTML() {
+  async function generateHTML() {
     const themeCookie =
       document.cookie
         .split("; ")
@@ -1899,31 +1949,76 @@ async function deleteActivity() {
 </body>
 </html>`;
 
-    const blob = new Blob(
-      [html],
-      {
-        type: "text/html",
+        try {
+      const blob = new Blob(
+        [html],
+        {
+          type: "text/html",
+        }
+      );
+
+      const url =
+        URL.createObjectURL(blob);
+
+      const link =
+        document.createElement("a");
+
+      link.href = url;
+
+      link.download =
+        outputFilename;
+
+      document.body.appendChild(link);
+
+      link.click();
+
+      document.body.removeChild(link);
+
+      URL.revokeObjectURL(url);
+
+      await fetch("/api/usage-events", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          eventType: "GENERATION_SUCCESS",
+          activityId: savedActivityId,
+          activityType: "WORD_SEARCH",
+          success: true,
+          details:
+            `Generated Word Search HTML: ${outputFilename}`,
+        }),
+      });
+    } catch (error) {
+      console.error(
+        "Failed to generate Word Search HTML:",
+        error
+      );
+
+      try {
+        await fetch("/api/usage-events", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            eventType: "GENERATION_FAILED",
+            activityId: savedActivityId,
+            activityType: "WORD_SEARCH",
+            success: false,
+            details:
+              error.message ||
+              "Unknown Word Search generation error",
+          }),
+        });
+      } catch (loggingError) {
+        console.error(
+          "Failed to record generation failure:",
+          loggingError
+        );
       }
-    );
-
-    const url =
-      URL.createObjectURL(blob);
-
-    const link =
-      document.createElement("a");
-
-    link.href = url;
-
-    link.download =
-      outputFilename;
-
-    document.body.appendChild(link);
-
-    link.click();
-
-    document.body.removeChild(link);
-
-    URL.revokeObjectURL(url);
+    }
   }
 
   return (

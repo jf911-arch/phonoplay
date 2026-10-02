@@ -52,3 +52,6 @@ next-env.d.ts
 # Local SQLite database
 *.db
 *.db-journal
+# Test and load testing output
+/test-results/
+jmeter.log

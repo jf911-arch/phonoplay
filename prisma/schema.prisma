@@ -13,15 +13,14 @@ model Activity {
   type           String
   difficulty     String
   hintsEnabled   Boolean  @default(false)
-
   gridSize       Int      @default(10)
   maxGuesses     Int      @default(6)
   outputFilename String?
-
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-
   words          Word[]
+
+  usageEvents    UsageEvent[]
 }
 
 model Word {
@@ -31,4 +30,20 @@ model Word {
   activityId Int
 
   activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+}
+
+model UsageEvent {
+  id         Int      @id @default(autoincrement())
+  eventType  String
+  activityId Int?
+  activity   Activity? @relation(fields: [activityId], references: [id], onDelete: SetNull)
+  activityType String?
+  durationMs Int?
+  success    Boolean?
+  details    String?
+  createdAt  DateTime @default(now())
+
+  @@index([eventType])
+  @@index([activityType])
+  @@index([createdAt])
 }

@@ -195,6 +195,15 @@ export async function POST(request) {
 
     // Word Search needs at least one word
     if (type === "WORD_SEARCH" && words.length === 0) {
+      await prisma.usageEvent.create({
+        data: {
+          eventType: "INVALID_ACTIVITY_DATA",
+          activityType: "WORD_SEARCH",
+          success: false,
+          details: "Word Search activity was submitted with an empty word list.",
+        },
+      });
+
       return Response.json(
         {
           success: false,
@@ -222,6 +231,16 @@ export async function POST(request) {
       },
       include: {
         words: true,
+      },
+    });
+
+    await prisma.usageEvent.create({
+      data: {
+        eventType: "ACTIVITY_CREATED",
+        activityId: activity.id,
+        activityType: activity.type,
+        success: true,
+        details: `Created ${activity.type} activity: ${activity.title}`,
       },
     });
 

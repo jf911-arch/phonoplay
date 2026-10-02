@@ -12,8 +12,8 @@
   --text-secondary: #687083;
   --text-light: #8c94a5;
 
-  --primary: #635bff;
-  --primary-dark: #5048d9;
+  --primary: #4038b8;
+  --primary-dark: #4038b8;
   --primary-light: #eeecff;
 
   --border: #e2e5ec;
@@ -269,20 +269,14 @@ a {
 
 .hero-badge {
   display: inline-flex;
-
   padding: 6px 12px;
   margin-bottom: 20px;
-
-  background: var(--primary-light);
-  color: var(--primary);
-
+  background: #4038b8;
+  color: white;
   border-radius: 30px;
-
   font-size: 12px;
   font-weight: 700;
-
   letter-spacing: 0.4px;
-
   text-transform: uppercase;
 }
 
@@ -349,10 +343,8 @@ a {
 }
 
 .primary-button {
-  background: var(--primary);
-
+  background: #4038b8;
   color: white;
-
   box-shadow:
     0 8px 20px rgba(99, 91, 255, 0.2);
 }
@@ -3153,4 +3145,95 @@ body.compact-layout .page-header {
   width: 100%;
   max-width: 1100px;
   margin: 65px auto 32px;
+}
+
+/* Dashboard */
+
+.dashboard {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 24px 60px;
+  color: inherit;
+}
+
+.dashboard-header {
+  margin-bottom: 40px;
+}
+
+.dashboard-header h1 {
+  margin-bottom: 8px;
+}
+
+.dashboard-header p {
+  margin: 0;
+  opacity: 0.65;
+}
+
+.dashboard-section {
+  margin-bottom: 36px;
+}
+
+.dashboard-section h2 {
+  margin-bottom: 16px;
+}
+
+.dashboard-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.dashboard-card {
+  padding: 22px;
+  border: 1px solid rgba(128, 128, 128, 0.3);
+  border-radius: 12px;
+  background: transparent;
+}
+
+.dashboard-card .card-label {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 14px;
+  opacity: 0.65;
+}
+
+.dashboard-card strong {
+  display: block;
+  font-size: 28px;
+}
+
+.dashboard-alerts {
+  display: grid;
+  gap: 12px;
+}
+
+.dashboard-alert {
+  padding: 16px 20px;
+  border-radius: 10px;
+  border: 1px solid rgba(128, 128, 128, 0.3);
+}
+
+.dashboard-alert p {
+  margin: 6px 0 0;
+  opacity: 0.75;
+}
+
+.dashboard-alert-success {
+  background: rgba(46, 160, 67, 0.08);
+  border-color: rgba(46, 160, 67, 0.3);
+}
+
+.dashboard-alert-warning {
+  background: rgba(210, 153, 34, 0.1);
+  border-color: rgba(210, 153, 34, 0.35);
+}
+
+@media (max-width: 768px) {
+  .dashboard-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard {
+    padding: 24px 16px 40px;
+  }
 }

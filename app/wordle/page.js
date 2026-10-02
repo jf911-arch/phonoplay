@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const PHONEMES = [
   {
@@ -129,6 +129,48 @@ export default function WordlePage() {
 
   const [activityIdToLoad, setActivityIdToLoad] = useState("");
   const [loadingActivity, setLoadingActivity] = useState(false);
+
+  const pageStartTime = useRef(Date.now());
+
+useEffect(() => {
+  // Record that the Wordle page was viewed
+  fetch("/api/usage-events", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      eventType: "ACTIVITY_VIEWED",
+      activityType: "WORDLE",
+      success: true,
+      details: "Wordle builder viewed",
+    }),
+  }).catch((error) => {
+    console.error("Failed to record activity view:", error);
+  });
+
+  // Record how long the user spent on the page
+  return () => {
+    const durationMs = Date.now() - pageStartTime.current;
+
+    fetch("/api/usage-events", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      keepalive: true,
+      body: JSON.stringify({
+        eventType: "TIME_ON_PAGE",
+        activityType: "WORDLE",
+        durationMs,
+        success: true,
+        details: "Time spent on Wordle builder",
+      }),
+    }).catch((error) => {
+      console.error("Failed to record time on page:", error);
+    });
+  };
+}, []);
 
   function addPhoneme(phoneme) {
     if (gameStatus !== "playing") {
@@ -476,7 +518,7 @@ export default function WordlePage() {
     return bestStatus;
   }
 
-  function generateHTML() {
+  async function generateHTML() {
     const themeCookie =
       document.cookie
         .split("; ")
@@ -1382,28 +1424,72 @@ export default function WordlePage() {
 
 </body>
 </html>`;
+    
+      try {
+      const blob = new Blob(
+        [html],
+        { type: "text/html" }
+      );
 
-    const blob = new Blob(
-      [html],
-      { type: "text/html" }
-    );
+      const url =
+        URL.createObjectURL(blob);
 
-    const url =
-      URL.createObjectURL(blob);
+      const link =
+        document.createElement("a");
 
-    const link =
-      document.createElement("a");
+      link.href = url;
+      link.download = outputFilename;
 
-    link.href = url;
-    link.download = outputFilename;
+      document.body.appendChild(link);
 
-    document.body.appendChild(link);
+      link.click();
 
-    link.click();
+      document.body.removeChild(link);
 
-    document.body.removeChild(link);
+      URL.revokeObjectURL(url);
 
-    URL.revokeObjectURL(url);
+      await fetch("/api/usage-events", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          eventType: "GENERATION_SUCCESS",
+          activityId: savedActivityId,
+          activityType: "WORDLE",
+          success: true,
+          details: `Generated Wordle HTML: ${outputFilename}`,
+        }),
+      });
+        } catch (error) {
+      console.error(
+        "Failed to generate Wordle HTML:",
+        error
+      );
+
+      try {
+        await fetch("/api/usage-events", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            eventType: "GENERATION_FAILED",
+            activityId: savedActivityId,
+            activityType: "WORDLE",
+            success: false,
+            details:
+              error.message ||
+              "Unknown Wordle generation error",
+          }),
+        });
+      } catch (loggingError) {
+        console.error(
+          "Failed to record generation failure:",
+          loggingError
+        );
+      }
+    }
   }
 
   return (

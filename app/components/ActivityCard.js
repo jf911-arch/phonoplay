@@ -16,7 +16,7 @@ export default function ActivityCard({
         <p>{description}</p>
 
         <Link href={href} className="activity-button">
-          Build Activity
+          Build {title}
           <span>→</span>
         </Link>
       </div>
