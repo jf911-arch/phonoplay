@@ -284,6 +284,10 @@ export default function WordSearchPage() {
 
   const [activityWords, setActivityWords] = useState(WORDS);
 
+  useEffect(() => {
+    setPuzzle(generatePuzzle(WORDS, GRID_SIZE));
+  }, []);
+
   const regeneratePuzzle = () => {
     setPuzzle(generatePuzzle(activityWords, gridSize));
     setFoundWords([]);
